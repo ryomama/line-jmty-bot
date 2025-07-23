@@ -138,12 +138,17 @@ async def main():
     while True:
         settings = load_settings()
 
-        for user_id in settings.keys():
-            if user_id not in started_users:
+        for user_id, config in settings.items():
+            # active=True のユーザーのみ起動し、未起動ユーザーなら監視タスクを開始
+            if config.get("active") and user_id not in started_users:
                 task = asyncio.create_task(monitor_user(user_id))
                 tasks.append(task)
                 started_users.add(user_id)
                 logger.info(f"{user_id} : 監視タスク起動済み")
+
+            # active=False のユーザーは監視タスク再起動を許可するため set から除外
+            if not config.get("active") and user_id in started_users:
+                started_users.remove(user_id)
 
         await asyncio.sleep(60)  # 新規ユーザー追加監視
 

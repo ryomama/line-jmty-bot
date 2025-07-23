@@ -16,6 +16,7 @@ load_dotenv()
 # 環境変数取得（未設定時も落ちない）
 CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN") or "NOT_SET"
 CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET") or "NOT_SET"
+ADMIN_USER_ID = os.getenv("LINE_ADMIN_USER_ID") or "NOT_SET"
 
 line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
@@ -23,6 +24,17 @@ handler = WebhookHandler(CHANNEL_SECRET)
 app = Flask(__name__)
 SETTINGS_PATH = "data/user_urls.json"
 user_settings = {}
+
+# 管理者にのみ通知を送る
+def notify_admin(message):
+    if not ADMIN_USER_ID:
+        print("[WARN] 管理者LINE IDが設定されていないため通知をスキップします。")
+        return
+    try:
+        line_bot_api.push_message(ADMIN_USER_ID, TextSendMessage(text=message))
+        print("[INFO] 管理者に通知を送信しました。")
+    except Exception as e:
+        print(f"[ERROR] 管理者への通知に失敗: {e}")
 
 def load_user_settings():
     global user_settings
